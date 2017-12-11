@@ -128,7 +128,7 @@ NOTES:
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
-  return 2;
+  return ~(~x|~y);
 }
 /*
  * bitXor - x^y using only ~ and &
@@ -138,7 +138,7 @@ int bitAnd(int x, int y) {
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+  return ~(x&y)&(~(~x&~y));
 }
 /*
  * thirdBits - return 32-bit quantity with every third bit
@@ -153,7 +153,10 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int thirdBits(void) {
-  return 2;
+  int num1 = 0x49; 
+  int num2 = 0x24;
+  //return (num<<24) + (num<<18) + (num<<9) + num;
+  return num1 + (num1<<9) + (num2<<16) + (num1<<24);
 }
 // Rating: 2
 /*
