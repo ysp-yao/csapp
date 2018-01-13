@@ -2,3 +2,4 @@ btest
 *.test
 build
 *.swp
+*.o
