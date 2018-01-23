@@ -3,3 +3,4 @@ btest
 build
 *.swp
 *.o
+*.out
