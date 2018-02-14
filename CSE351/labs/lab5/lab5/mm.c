@@ -379,7 +379,36 @@ void* mm_malloc (size_t size) {
   // Implement mm_malloc.  You can change or remove any of the above
   // code.  It is included as a suggestion of where to start.
   // You will want to replace this return statement...
-  return NULL;
+
+  examine_heap();
+
+  // FREE_LIST_HEAD
+  BlockInfo *free_block = searchFreeList(reqSize); 
+  while (!free_block) {
+    requestMoreSpace(reqSize);
+    free_block = searchFreeList(reqSize);
+  }
+  
+  // 将这个块从free list移除
+  removeFreeBlock(free_block);
+  size_t size1 = SIZE(free_block->sizeAndTags);
+
+  // 处理剩下的
+  if (size1 != reqSize) {
+    
+
+    size_t size2 = size1 - reqSize;
+    BlockInfo *next = UNSCALED_POINTER_ADD(free_block, reqSize);
+    next->sizeAndTags = size2 | TAG_PRECEDING_USED;
+    insertFreeBlock(next);
+    *((size_t*)UNSCALED_POINTER_ADD(next, size2 - WORD_SIZE)) = size2 | TAG_PRECEDING_USED;
+    
+  }
+
+  //
+  free_block->sizeAndTags = reqSize | TAG_PRECEDING_USED | TAG_USED;
+  
+  return UNSCALED_POINTER_ADD(free_block, WORD_SIZE);
 }
 
 /* Free the block referenced by ptr. */
