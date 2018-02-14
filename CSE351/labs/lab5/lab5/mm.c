@@ -379,7 +379,7 @@ void* mm_malloc (size_t size) {
   // Implement mm_malloc.  You can change or remove any of the above
   // code.  It is included as a suggestion of where to start.
   // You will want to replace this return statement...
-
+  reqSize += 32;
   examine_heap();
 
   // FREE_LIST_HEAD
