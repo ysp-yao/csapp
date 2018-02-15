@@ -379,8 +379,8 @@ void* mm_malloc (size_t size) {
   // Implement mm_malloc.  You can change or remove any of the above
   // code.  It is included as a suggestion of where to start.
   // You will want to replace this return statement...
-  reqSize += 32;
-  examine_heap();
+  reqSize += 32; // 不加32可能会导致free block空间不够
+  //examine_heap();
 
   // FREE_LIST_HEAD
   BlockInfo *free_block = searchFreeList(reqSize); 
@@ -394,15 +394,16 @@ void* mm_malloc (size_t size) {
   size_t size1 = SIZE(free_block->sizeAndTags);
 
   // 处理剩下的
-  if (size1 != reqSize) {
-    
-
+  reqSize -= 32;
+  if (reqSize < size1) {
     size_t size2 = size1 - reqSize;
     BlockInfo *next = UNSCALED_POINTER_ADD(free_block, reqSize);
     next->sizeAndTags = size2 | TAG_PRECEDING_USED;
     insertFreeBlock(next);
     *((size_t*)UNSCALED_POINTER_ADD(next, size2 - WORD_SIZE)) = size2 | TAG_PRECEDING_USED;
-    
+  }
+  else if (reqSize == size1) {
+    FREE_LIST_HEAD = NULL;    
   }
 
   //
@@ -413,12 +414,44 @@ void* mm_malloc (size_t size) {
 
 /* Free the block referenced by ptr. */
 void mm_free (void *ptr) {
+
+  //fprintf(stderr, "++++++++++++++++++++++++++++++++++++++++: %p\n", ptr);
+
+  //examine_heap();
+
+
+
   size_t payloadSize;
   BlockInfo * blockInfo;
   BlockInfo * followingBlock;
 
   // Implement mm_free.  You can change or remove the declaraions
   // above.  They are included as minor hints.
+
+
+
+  blockInfo = (BlockInfo *)UNSCALED_POINTER_SUB(ptr, WORD_SIZE);
+  size_t size = SIZE(blockInfo->sizeAndTags);
+  followingBlock = (BlockInfo *)UNSCALED_POINTER_ADD(blockInfo, size);
+
+  if (followingBlock->sizeAndTags & TAG_USED) {
+    size_t size2 = SIZE(followingBlock->sizeAndTags);
+    followingBlock->sizeAndTags = size2 | TAG_USED;
+    *((size_t*)UNSCALED_POINTER_ADD(followingBlock, size2-WORD_SIZE)) = size2 | TAG_USED;
+  }
+  
+ 
+  insertFreeBlock(blockInfo);
+
+  coalesceFreeBlock(blockInfo);
+
+  size_t size3 = SIZE(blockInfo->sizeAndTags);
+  blockInfo->sizeAndTags = size3 | TAG_PRECEDING_USED;
+  *((size_t*)UNSCALED_POINTER_ADD(blockInfo, size3-WORD_SIZE)) = size3 | TAG_PRECEDING_USED;
+
+
+  //examine_heap();
+  //fprintf(stderr, "=====================================\n");
 
 }
 
