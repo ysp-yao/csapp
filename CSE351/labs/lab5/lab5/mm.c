@@ -145,9 +145,12 @@ static void examine_heap() {
     if (block->sizeAndTags & TAG_USED) {
       fprintf(stderr, "ALLOCATED\n");
     } else {
-      fprintf(stderr, "FREE\tnext: %p, prev: %p\n",
+      fprintf(stderr, "FREE\tnext: %p, prev: %p, %d\n",
       (void *)block->next,
-      (void *)block->prev);
+      (void *)block->prev,
+      //10
+      SIZE(*((size_t*)UNSCALED_POINTER_ADD(block, SIZE(block->sizeAndTags)-8)))
+      );
     }
   }
   fprintf(stderr, "END OF HEAP\n\n");
@@ -353,6 +356,12 @@ int mm_init () {
  * returns null.
  */
 void* mm_malloc (size_t size) {
+
+//  fprintf(stderr, "++++++++++++++++++++++++++++++++++++++++mm_malloc: %d\n", size);
+//  examine_heap();
+
+/////////////////////
+
   size_t reqSize;
   BlockInfo * ptrFreeBlock = NULL;
   size_t blockSize;
@@ -408,16 +417,22 @@ void* mm_malloc (size_t size) {
 
   //
   free_block->sizeAndTags = reqSize | TAG_PRECEDING_USED | TAG_USED;
-  
+
+    
+//  examine_heap();
+//  fprintf(stderr, "=====================================\n");
+
+
+
   return UNSCALED_POINTER_ADD(free_block, WORD_SIZE);
 }
 
 /* Free the block referenced by ptr. */
 void mm_free (void *ptr) {
 
-  //fprintf(stderr, "++++++++++++++++++++++++++++++++++++++++: %p\n", ptr);
+//  fprintf(stderr, "++++++++++++++++++++++++++++++++++++++++mm_free: %p\n", ptr);
 
-  //examine_heap();
+//  examine_heap();
 
 
 
@@ -434,24 +449,18 @@ void mm_free (void *ptr) {
   size_t size = SIZE(blockInfo->sizeAndTags);
   followingBlock = (BlockInfo *)UNSCALED_POINTER_ADD(blockInfo, size);
 
-  if (followingBlock->sizeAndTags & TAG_USED) {
-    size_t size2 = SIZE(followingBlock->sizeAndTags);
-    followingBlock->sizeAndTags = size2 | TAG_USED;
-    *((size_t*)UNSCALED_POINTER_ADD(followingBlock, size2-WORD_SIZE)) = size2 | TAG_USED;
-  }
-  
- 
   insertFreeBlock(blockInfo);
-
   coalesceFreeBlock(blockInfo);
 
-  size_t size3 = SIZE(blockInfo->sizeAndTags);
-  blockInfo->sizeAndTags = size3 | TAG_PRECEDING_USED;
-  *((size_t*)UNSCALED_POINTER_ADD(blockInfo, size3-WORD_SIZE)) = size3 | TAG_PRECEDING_USED;
+  // （物理上）前后都没有free block
+  if (blockInfo->sizeAndTags&TAG_PRECEDING_USED && followingBlock->sizeAndTags&TAG_USED) {
+    blockInfo->sizeAndTags = size | TAG_PRECEDING_USED; 
+    *((size_t*)UNSCALED_POINTER_ADD(blockInfo, size-WORD_SIZE)) = size | TAG_PRECEDING_USED;
+  }
 
 
-  //examine_heap();
-  //fprintf(stderr, "=====================================\n");
+//  examine_heap();
+//  fprintf(stderr, "=====================================\n");
 
 }
 
